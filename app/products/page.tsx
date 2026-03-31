@@ -8,6 +8,7 @@ import { ProductCard } from '@/components/product-card'
 import { ProductFilters } from '@/components/product-filters'
 import { useState } from 'react'
 import { Menu, ArrowUpDown } from 'lucide-react'
+import { toast } from "sonner";
 
 const ALL_PRODUCTS = [
   {
@@ -176,7 +177,7 @@ const addToCart = async (productId: string) => {
       productId,
     });
 
-    alert("Added to cart 🛒");
+    toast.success("Added to cart 🛒");
   } catch (error) {
     console.error(error);
     alert("Error adding to cart");

@@ -6,6 +6,7 @@ import { Star, Heart, Share2, ShoppingCart, Truck, RotateCcw, Lock } from 'lucid
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import API from "@/lib/api";
+import { toast } from "sonner";
 
 
 
@@ -65,7 +66,7 @@ const addToCart = async () => {
       productId: product._id, // ✅ REAL ID
     });
 
-    alert("Added to cart 🛒");
+    toast.success("Added to cart 🛒");
   } catch (error) {
     console.error(error);
     alert("Error adding to cart");
