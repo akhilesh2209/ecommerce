@@ -2,13 +2,18 @@
 
 import { useState } from "react";
 import API from "@/lib/api";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
+  const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleRegister = async () => {
+    setIsSubmitting(true);
     try {
       const res = await API.post("/auth/register", {
         name,
@@ -16,10 +21,12 @@ export default function RegisterPage() {
         password,
       });
 
-      alert("Registered Successfully");
-      console.log(res.data);
+      toast.success("Registered Successfully");
+      router.push("/login");
     } catch (error: any) {
-      alert(error.response?.data?.message || "Error");
+      toast.error(error.response?.data?.message || "Error");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -51,9 +58,12 @@ export default function RegisterPage() {
 
         <button
           onClick={handleRegister}
-          className="w-full bg-black text-white p-2 rounded"
+          disabled={isSubmitting}
+          className={`w-full bg-black text-white p-2 rounded ${
+            isSubmitting ? "opacity-70 cursor-not-allowed" : ""
+          }`}
         >
-          Register
+          {isSubmitting ? "Registering..." : "Register"}
         </button>
       </div>
     </div>

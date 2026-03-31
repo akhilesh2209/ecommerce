@@ -1,16 +1,13 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Heart, Search, ShoppingCart, Menu, X, ChevronDown } from 'lucide-react'
 import { ThemeToggle } from './theme-toggle'
+import { useAppState } from './app-state-provider'
 
 export function Navbar() {
-  const [token, setToken] = useState<string | null>(null);
-
-useEffect(() => {
-  setToken(localStorage.getItem("token"));
-}, []);
+  const { isAuthenticated, logout, cartCount } = useAppState();
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
 
@@ -27,6 +24,11 @@ useEffect(() => {
           {/* Desktop Navigation */}
           <div className="hidden items-center space-x-8 lg:flex">
             <DropdownLink label="Shop" href="/products" items={['Electronics', 'Fashion', 'Home']} />
+            {isAuthenticated ? (
+              <Link href="/orders" className="text-sm font-medium text-foreground/70 transition-colors hover:text-foreground">
+                Orders
+              </Link>
+            ) : null}
             <Link href="/deals" className="text-sm font-medium text-foreground/70 transition-colors hover:text-foreground">
               Deals
             </Link>
@@ -61,20 +63,19 @@ useEffect(() => {
               <Heart className="h-5 w-5" />
             </button>
 
-            <button className="relative rounded-lg p-2 hover:bg-muted" aria-label="Shopping Cart">
+            <Link href="/cart" className="relative rounded-lg p-2 hover:bg-muted" aria-label="Shopping Cart">
               <ShoppingCart className="h-5 w-5" />
-              <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-accent text-xs font-bold text-accent-foreground">
-                0
-              </span>
-            </button>
+              {cartCount > 0 ? (
+                <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 text-xs font-bold text-accent-foreground">
+                  {cartCount > 99 ? "99+" : cartCount}
+                </span>
+              ) : null}
+            </Link>
 
             {/* Auth Links */}
-{token ? (
+{isAuthenticated ? (
   <button
-    onClick={() => {
-      localStorage.removeItem("token");
-      window.location.reload();
-    }}
+    onClick={logout}
     className="text-sm font-medium hover:text-foreground"
   >
     Logout
@@ -109,6 +110,11 @@ useEffect(() => {
             <Link href="/products" className="block px-4 py-2 text-sm font-medium hover:bg-muted rounded">
               Shop
             </Link>
+            {isAuthenticated ? (
+              <Link href="/orders" className="block px-4 py-2 text-sm font-medium hover:bg-muted rounded">
+                Orders
+              </Link>
+            ) : null}
             <Link href="/deals" className="block px-4 py-2 text-sm font-medium hover:bg-muted rounded">
               Deals
             </Link>
@@ -116,13 +122,24 @@ useEffect(() => {
               About
             </Link>
 
-            <Link href="/login" className="block px-4 py-2 text-sm font-medium hover:bg-muted rounded">
-  Login
-</Link>
+            {isAuthenticated ? (
+              <button
+                onClick={logout}
+                className="block w-full px-4 py-2 text-left text-sm font-medium hover:bg-muted rounded"
+              >
+                Logout
+              </button>
+            ) : (
+              <>
+                <Link href="/login" className="block px-4 py-2 text-sm font-medium hover:bg-muted rounded">
+                  Login
+                </Link>
 
-<Link href="/register" className="block px-4 py-2 text-sm font-medium hover:bg-muted rounded">
-  Register
-</Link>
+                <Link href="/register" className="block px-4 py-2 text-sm font-medium hover:bg-muted rounded">
+                  Register
+                </Link>
+              </>
+            )}
           </div>
         )}
       </div>

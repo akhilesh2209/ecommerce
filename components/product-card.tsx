@@ -6,6 +6,7 @@ import { useState } from 'react'
 
 interface ProductCardProps {
   onAddToCart?: () => void;
+  onBuyNow?: () => void;
   id: string 
   name: string
   price: number
@@ -29,14 +30,39 @@ export function ProductCard({
   image,
   inStock,
   discount = 0,
-  onAddToCart   // ✅ ADD THIS
+  onAddToCart,
+  onBuyNow
 }: ProductCardProps) {
   const [isWishlisted, setIsWishlisted] = useState(false)
+  const [isAdding, setIsAdding] = useState(false)
+  const [isBuying, setIsBuying] = useState(false)
+
+  const handleAddToCart = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    if (!onAddToCart || isAdding) return
+    setIsAdding(true)
+    try {
+      await onAddToCart()
+    } finally {
+      setIsAdding(false)
+    }
+  }
+
+  const handleBuyNow = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    if (!onBuyNow || isBuying) return
+    setIsBuying(true)
+    try {
+      await onBuyNow()
+    } finally {
+      setIsBuying(false)
+    }
+  }
 
   return (
-    <div className="group overflow-hidden rounded-xl border border-border/50 bg-card shadow-subtle hover:shadow-elevation transition-all duration-300 hover:-translate-y-1">
+    <div className="group overflow-hidden rounded-xl border border-border/50 bg-card shadow-subtle hover:shadow-elevation transition-all duration-300 hover:-translate-y-1 flex flex-col h-full">
       {/* Product Image */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-primary/10 to-accent/10 h-56 flex items-center justify-center">
+      <div className="relative overflow-hidden bg-gradient-to-br from-primary/10 to-accent/10 h-56 flex items-center justify-center flex-shrink-0">
         <div className="text-6xl group-hover:scale-110 transition-transform duration-300">
           {image}
         </div>
@@ -44,7 +70,10 @@ export function ProductCard({
         {/* Action Buttons */}
         <div className="absolute right-4 top-4 flex flex-col space-y-2 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
-            onClick={() => setIsWishlisted(!isWishlisted)}
+            onClick={(e) => {
+              e.preventDefault()
+              setIsWishlisted(!isWishlisted)
+            }}
             className={`rounded-full p-2 shadow-subtle transition-all ${
               isWishlisted
                 ? 'bg-red-500 text-white'
@@ -53,7 +82,10 @@ export function ProductCard({
           >
             <Heart className={`h-5 w-5 ${isWishlisted ? 'fill-current' : ''}`} />
           </button>
-          <button className="rounded-full bg-white/90 p-2 shadow-subtle hover:bg-white transition-all">
+          <button 
+            onClick={(e) => e.preventDefault()}
+            className="rounded-full bg-white/90 p-2 shadow-subtle hover:bg-white transition-all"
+          >
             <Share2 className="h-5 w-5" />
           </button>
         </div>
@@ -73,62 +105,80 @@ export function ProductCard({
       </div>
 
       {/* Product Info */}
-      <div className="space-y-4 p-6">
-        <div>
-          <p className="text-xs font-medium text-accent uppercase tracking-wide">
-            {category}
-          </p>
-          <Link href={`/product/${id}`}>
-            <h3 className="mt-2 line-clamp-2 text-base font-semibold text-foreground hover:text-accent transition-colors">
-              {name}
-            </h3>
-          </Link>
-        </div>
-
-        {/* Rating */}
-        <div className="flex items-center space-x-2">
-          <div className="flex items-center">
-            {[...Array(5)].map((_, i) => (
-              <Star
-                key={i}
-                className={`h-4 w-4 ${
-                  i < Math.floor(rating)
-                    ? 'fill-yellow-400 text-yellow-400'
-                    : 'text-muted'
-                }`}
-              />
-            ))}
+      <div className="p-6 flex flex-col flex-1">
+        <div className="flex-1 space-y-4">
+          <div>
+            <p className="text-xs font-medium text-accent uppercase tracking-wide">
+              {category}
+            </p>
+            <Link href={`/product/${id}`}>
+              <h3 className="mt-2 line-clamp-2 text-base font-semibold text-foreground hover:text-accent transition-colors">
+                {name}
+              </h3>
+            </Link>
           </div>
-          <span className="text-sm text-muted-foreground">
-            ({reviews})
-          </span>
+
+          {/* Rating */}
+          <div className="flex items-center space-x-2">
+            <div className="flex items-center">
+              {[...Array(5)].map((_, i) => (
+                <Star
+                  key={i}
+                  className={`h-4 w-4 ${
+                    i < Math.floor(rating)
+                      ? 'fill-yellow-400 text-yellow-400'
+                      : 'text-muted'
+                  }`}
+                />
+              ))}
+            </div>
+            <span className="text-sm text-muted-foreground">
+              ({reviews})
+            </span>
+          </div>
+
+          {/* Price */}
+          <div className="flex items-baseline space-x-2">
+            <span className="text-2xl font-bold text-foreground">
+              ${price}
+            </span>
+            {originalPrice > price && (
+              <span className="text-sm text-muted-foreground line-through">
+                ${originalPrice}
+              </span>
+            )}
+          </div>
         </div>
 
-        {/* Price */}
-        <div className="flex items-baseline space-x-2">
-          <span className="text-2xl font-bold text-foreground">
-            ${price}
-          </span>
-          {originalPrice > price && (
-            <span className="text-sm text-muted-foreground line-through">
-              ${originalPrice}
-            </span>
+        {/* Buttons */}
+        <div className="mt-6 space-y-2">
+          <button
+            onClick={handleAddToCart}
+            disabled={!inStock || isAdding || isBuying}
+            className={`w-full rounded-lg py-3 font-medium flex items-center justify-center space-x-2 transition-all duration-200 ${
+              inStock
+                ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                : 'bg-muted text-muted-foreground cursor-not-allowed'
+            } ${isAdding ? 'opacity-70' : ''}`}
+          >
+            <ShoppingCart className="h-5 w-5" />
+            <span>{isAdding ? 'Adding...' : inStock ? 'Add to Cart' : 'Out of Stock'}</span>
+          </button>
+          
+          {onBuyNow && (
+            <button
+              onClick={handleBuyNow}
+              disabled={!inStock || isAdding || isBuying}
+              className={`w-full rounded-lg border-2 py-3 font-medium transition-all duration-200 ${
+                inStock
+                  ? 'border-accent text-accent hover:bg-accent/10'
+                  : 'border-muted text-muted-foreground cursor-not-allowed'
+              } ${isBuying ? 'opacity-70' : ''}`}
+            >
+              <span>{isBuying ? 'Processing...' : 'Buy Now'}</span>
+            </button>
           )}
         </div>
-
-        {/* Add to Cart Button */}
-        <button
-  onClick={onAddToCart}
-  disabled={!inStock}
-  className={`w-full rounded-lg py-3 font-medium flex items-center justify-center space-x-2 transition-all duration-200 ${
-    inStock
-      ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-      : 'bg-muted text-muted-foreground cursor-not-allowed'
-  }`}
->
-  <ShoppingCart className="h-5 w-5" />
-  <span>{inStock ? 'Add to Cart' : 'Out of Stock'}</span>
-</button>
       </div>
     </div>
   )

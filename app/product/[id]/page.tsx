@@ -3,10 +3,11 @@
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { Star, Heart, Share2, ShoppingCart, Truck, RotateCcw, Lock } from 'lucide-react'
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import API from "@/lib/api";
 import { toast } from "sonner";
+import { useAppState } from "@/components/app-state-provider";
 
 
 
@@ -35,8 +36,11 @@ const REVIEWS = [
 ]
 
 export default function ProductDetailPage() {
+  const router = useRouter();
+  const { userId, bumpCartCount, refreshCartCount } = useAppState();
   const { id } = useParams();
 const [product, setProduct] = useState<any>(null);
+const [isActionLoading, setIsActionLoading] = useState(false);
 
 useEffect(() => {
   const fetchProduct = async () => {
@@ -54,22 +58,38 @@ useEffect(() => {
 }, [id]);
 const addToCart = async () => {
   try {
-    const userId = localStorage.getItem("userId");
-
     if (!userId) {
-      alert("Please login first");
-      return;
+      toast.error("Please login first");
+      router.push("/login");
+      return false;
     }
 
-    await API.post("/cart", {
-      userId,
-      productId: product._id, // ✅ REAL ID
-    });
+    setIsActionLoading(true);
+    for (let i = 0; i < quantity; i += 1) {
+      await API.post("/cart", {
+        userId,
+        productId: product._id, // ✅ REAL ID
+      });
+    }
+    bumpCartCount(quantity);
+    refreshCartCount();
 
     toast.success("Added to cart 🛒");
+    return true;
   } catch (error) {
     console.error(error);
-    alert("Error adding to cart");
+    toast.error("Error adding to cart");
+    return false;
+  } finally {
+    setIsActionLoading(false);
+  }
+};
+
+const buyNow = async () => {
+  const added = await addToCart();
+  if (added) {
+    toast.success("Redirecting to checkout...");
+    router.push("/checkout");
   }
 };
   const [quantity, setQuantity] = useState(1)
@@ -205,11 +225,23 @@ const addToCart = async () => {
             <div className="space-y-3 pt-4">
               <button
   onClick={addToCart}
-  className="w-full rounded-lg bg-primary text-primary-foreground py-4 font-bold text-lg hover:bg-primary/90 transition-all duration-200 flex items-center justify-center space-x-2"
+  disabled={isActionLoading}
+  className={`w-full rounded-lg bg-primary text-primary-foreground py-4 font-bold text-lg hover:bg-primary/90 transition-all duration-200 flex items-center justify-center space-x-2 ${
+    isActionLoading ? "opacity-70 cursor-not-allowed" : ""
+  }`}
 >
   <ShoppingCart className="h-6 w-6" />
-  <span>Add to Cart</span>
+  <span>{isActionLoading ? "Adding..." : "Add to Cart"}</span>
 </button>
+              <button
+                onClick={buyNow}
+                disabled={isActionLoading}
+                className={`w-full rounded-lg border-2 border-accent text-accent py-4 font-bold text-lg hover:bg-accent/10 transition-all duration-200 ${
+                  isActionLoading ? "opacity-70 cursor-not-allowed" : ""
+                }`}
+              >
+                Buy Now
+              </button>
               <div className="flex space-x-3">
                 <button
                   onClick={() => setIsWishlisted(!isWishlisted)}

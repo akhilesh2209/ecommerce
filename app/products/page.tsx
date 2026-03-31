@@ -9,6 +9,8 @@ import { ProductFilters } from '@/components/product-filters'
 import { useState } from 'react'
 import { Menu, ArrowUpDown } from 'lucide-react'
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { useAppState } from "@/components/app-state-provider";
 
 const ALL_PRODUCTS = [
   {
@@ -146,6 +148,8 @@ const ALL_PRODUCTS = [
 ]
 
 export default function ProductsPage() {
+  const router = useRouter();
+  const { userId, bumpCartCount, refreshCartCount } = useAppState();
   const [isFiltersOpen, setIsFiltersOpen] = useState(false)
   const [sortBy, setSortBy] = useState('featured')
   const [products, setProducts] = useState<any[]>([]);
@@ -165,10 +169,9 @@ export default function ProductsPage() {
 
 const addToCart = async (productId: string) => {
   try {
-    const userId = localStorage.getItem("userId");
-
     if (!userId) {
-      alert("Please login first");
+      toast.error("Please login first");
+      router.push("/login");
       return;
     }
 
@@ -177,10 +180,31 @@ const addToCart = async (productId: string) => {
       productId,
     });
 
+    bumpCartCount(1);
+    refreshCartCount();
     toast.success("Added to cart 🛒");
   } catch (error) {
     console.error(error);
-    alert("Error adding to cart");
+    toast.error("Error adding to cart");
+  }
+};
+
+const buyNow = async (productId: string) => {
+  try {
+    if (!userId) {
+      toast.error("Please login first");
+      router.push("/login");
+      return;
+    }
+
+    await API.post("/cart", { userId, productId });
+    bumpCartCount(1);
+    refreshCartCount();
+    toast.success("Added to cart. Redirecting to checkout...");
+    router.push("/checkout");
+  } catch (error) {
+    console.error(error);
+    toast.error("Failed to proceed to checkout");
   }
 };
 
@@ -248,6 +272,7 @@ const addToCart = async (productId: string) => {
   image={product.image || "📦"}
   inStock={product.countInStock > 0}
   onAddToCart={() => addToCart(product._id)}   // 👈 ADD THIS
+  onBuyNow={() => buyNow(product._id)}
 />
 ))}
             </div>

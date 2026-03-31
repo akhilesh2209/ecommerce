@@ -4,12 +4,20 @@ import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { ChevronRight, Lock, ShoppingCart, CheckCircle2 } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import API from "@/lib/api";
+import { toast } from "sonner";
+import { useAppState } from "@/components/app-state-provider";
 
 type CheckoutStep = 'shipping' | 'payment' | 'review' | 'confirmation'
 
 export default function CheckoutPage() {
+  const { userId, isAuthenticated, setCartCountFromItems, refreshCartCount } = useAppState();
   const [step, setStep] = useState<CheckoutStep>('shipping')
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [order, setOrder] = useState<any>(null);
+  const [cartItems, setCartItems] = useState<any[]>([]);
+  const [isCartLoading, setIsCartLoading] = useState(true);
   const [formData, setFormData] = useState({
     // Shipping
     firstName: '',
@@ -36,6 +44,64 @@ export default function CheckoutPage() {
   const handleStepChange = (newStep: CheckoutStep) => {
     setStep(newStep)
   }
+
+  useEffect(() => {
+    const fetchCart = async () => {
+      try {
+        if (!userId) {
+          setCartItems([]);
+          return;
+        }
+        const res = await API.get(`/cart/${userId}`);
+        setCartItems(res.data || []);
+      } catch (error) {
+        toast.error("Failed to load cart");
+        console.error(error);
+        setCartItems([]);
+      } finally {
+        setIsCartLoading(false);
+      }
+    };
+
+    fetchCart();
+  }, [userId]);
+
+  const cartSubtotal = cartItems.reduce(
+    (sum, item) => sum + item?.product?.price * item?.quantity,
+    0
+  );
+  const cartTax = cartSubtotal * 0.08;
+  const cartShipping = cartSubtotal > 100 ? 0 : 15;
+  const cartTotal = cartSubtotal + cartTax + cartShipping;
+  const itemCount = cartItems.reduce((sum, item) => sum + (item?.quantity || 0), 0);
+
+  const handlePlaceOrder = async () => {
+    setIsPlacingOrder(true);
+    try {
+      if (!isAuthenticated) {
+        toast.error("Please login first");
+        setIsPlacingOrder(false);
+        return;
+      }
+      if (cartItems.length === 0) {
+        toast.error("Cart is empty");
+        return;
+      }
+
+      const res = await API.post("/orders", {});
+      setOrder(res.data);
+      setCartItems([]);
+      setCartCountFromItems([]);
+      refreshCartCount();
+      toast.success("Order placed successfully");
+      setStep("confirmation");
+    } catch (error: any) {
+      const message = error?.response?.data?.message || "Failed to place order";
+      toast.error(message);
+    } finally {
+      setIsPlacingOrder(false);
+    }
+  };
 
   const STEPS: { id: CheckoutStep; label: string; icon: React.ReactNode }[] = [
     { id: 'shipping', label: 'Shipping', icon: '📍' },
@@ -292,10 +358,17 @@ export default function CheckoutPage() {
                     Back
                   </button>
                   <button
-                    onClick={() => handleStepChange('confirmation')}
-                    className="flex-1 rounded-lg bg-green-500 text-white py-3 font-semibold hover:bg-green-600 transition-colors flex items-center justify-center space-x-2"
+                    onClick={handlePlaceOrder}
+                    disabled={isPlacingOrder || isCartLoading || cartItems.length === 0}
+                    className={`flex-1 rounded-lg bg-green-500 text-white py-3 font-semibold hover:bg-green-600 transition-colors flex items-center justify-center space-x-2 ${
+                      isPlacingOrder || isCartLoading || cartItems.length === 0
+                        ? "opacity-70 cursor-not-allowed"
+                        : ""
+                    }`}
                   >
-                    <span>Place Order</span>
+                    <span>
+                      {isPlacingOrder ? "Placing..." : isCartLoading ? "Loading..." : "Place Order"}
+                    </span>
                     <CheckCircle2 className="h-5 w-5" />
                   </button>
                 </div>
@@ -313,13 +386,20 @@ export default function CheckoutPage() {
                   Thank you for your purchase. Your order has been confirmed and you will receive a confirmation email shortly.
                 </p>
                 <div className="inline-block rounded-lg bg-accent/10 px-6 py-3 text-sm font-mono text-accent">
-                  Order #PrimeStore-2024-001234
+                  Order #{order?._id ? order._id.toString().slice(-8) : "processing"}
                 </div>
                 <Link
                   href="/"
                   className="inline-flex items-center px-8 py-3 rounded-lg bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors"
                 >
                   Back to Home
+                </Link>
+
+                <Link
+                  href="/orders"
+                  className="inline-flex items-center px-8 py-3 rounded-lg border-2 border-border/50 text-foreground font-semibold hover:border-accent transition-colors"
+                >
+                  View Orders
                 </Link>
               </div>
             )}
@@ -330,38 +410,56 @@ export default function CheckoutPage() {
             <h3 className="font-semibold text-foreground text-lg">Order Summary</h3>
 
             <div className="space-y-3 border-b border-border/50 pb-4">
-              {[1, 2, 3].map((item) => (
-                <div key={item} className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Premium Item</span>
-                  <span className="text-foreground">${(299.99).toFixed(2)}</span>
-                </div>
-              ))}
+              {isCartLoading ? (
+                <div className="text-sm text-muted-foreground">Loading cart...</div>
+              ) : cartItems.length === 0 ? (
+                <div className="text-sm text-muted-foreground">Your cart is empty.</div>
+              ) : (
+                cartItems.map((it) => (
+                  <div key={it._id} className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      {it?.product?.name} × {it?.quantity}
+                    </span>
+                    <span className="text-foreground">
+                      ${(it?.product?.price * it?.quantity).toFixed(2)}
+                    </span>
+                  </div>
+                ))
+              )}
             </div>
 
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Subtotal</span>
-                <span className="text-foreground">$749.97</span>
+                <span className="text-foreground">${cartSubtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Shipping</span>
-                <span className="text-green-500 font-medium">Free</span>
+                <span className="text-foreground">
+                  {cartShipping === 0 ? (
+                    <span className="text-green-500 font-medium">Free</span>
+                  ) : (
+                    `$${cartShipping.toFixed(2)}`
+                  )}
+                </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Tax</span>
-                <span className="text-foreground">$59.99</span>
+                <span className="text-foreground">${cartTax.toFixed(2)}</span>
               </div>
             </div>
 
             <div className="border-t border-border/50 pt-4 flex justify-between text-xl font-bold">
               <span>Total</span>
-              <span className="text-accent">$809.96</span>
+              <span className="text-accent">${cartTotal.toFixed(2)}</span>
             </div>
 
             <div className="rounded-lg bg-accent/10 p-4 space-y-2">
               <div className="flex items-start space-x-2">
                 <ShoppingCart className="h-4 w-4 text-accent mt-0.5 flex-shrink-0" />
-                <p className="text-xs text-accent font-medium">3 items in cart</p>
+                <p className="text-xs text-accent font-medium">
+                  {itemCount} item{itemCount === 1 ? "" : "s"} in cart
+                </p>
               </div>
             </div>
           </div>

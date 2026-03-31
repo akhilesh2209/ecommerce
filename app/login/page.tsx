@@ -2,25 +2,33 @@
 
 import { useState } from "react";
 import API from "@/lib/api";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { useAppState } from "@/components/app-state-provider";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { login } = useAppState();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleLogin = async () => {
+    setIsSubmitting(true);
     try {
       const res = await API.post("/auth/login", {
         email,
         password,
       });
 
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("userId", res.data._id);
+      await login(res.data.token, res.data._id);
 
-      alert("Login Successful");
-      console.log(res.data);
+      toast.success("Login Successful");
+      router.push("/");
     } catch (error) {
-      alert("Invalid credentials");
+      toast.error("Invalid credentials");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -45,9 +53,12 @@ export default function LoginPage() {
 
         <button
           onClick={handleLogin}
-          className="w-full bg-black text-white p-2 rounded"
+          disabled={isSubmitting}
+          className={`w-full bg-black text-white p-2 rounded ${
+            isSubmitting ? "opacity-70 cursor-not-allowed" : ""
+          }`}
         >
-          Login
+          {isSubmitting ? "Logging in..." : "Login"}
         </button>
       </div>
     </div>

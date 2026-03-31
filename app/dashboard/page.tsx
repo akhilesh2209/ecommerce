@@ -1,94 +1,49 @@
 "use client";
 
-import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-
+import { useEffect, useState } from "react";
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { User, ShoppingBag, Heart, Settings, LogOut, ChevronRight, Star, Eye } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import API from "@/lib/api";
+import { useAppState } from "@/components/app-state-provider";
+import { toast } from "sonner";
 
 type DashboardTab = 'overview' | 'orders' | 'wishlist' | 'profile'
 
-const USER_PROFILE = {
-  name: 'Sarah Anderson',
-  email: 'sarah.anderson@example.com',
-  phone: '+1 (555) 123-4567',
-  memberSince: 'January 2023',
-  tier: 'Premium',
-}
-
-const USER_ORDERS = [
-  {
-    id: 'PrimeStore-2024-001234',
-    date: '2024-03-20',
-    total: 809.96,
-    status: 'Delivered',
-    items: 3,
-    image: '🎧',
-  },
-  {
-    id: 'PrimeStore-2024-001200',
-    date: '2024-03-10',
-    total: 149.99,
-    status: 'Delivered',
-    items: 1,
-    image: '🏠',
-  },
-  {
-    id: 'PrimeStore-2024-001156',
-    date: '2024-02-28',
-    total: 249.99,
-    status: 'Delivered',
-    items: 1,
-    image: '💡',
-  },
-]
-
-const WISHLIST_ITEMS = [
-  {
-    id: 1,
-    name: 'Premium Laptop',
-    price: 1299.99,
-    rating: 4.9,
-    reviews: 856,
-    image: '💻',
-    inStock: true,
-  },
-  {
-    id: 2,
-    name: 'Mechanical Keyboard',
-    price: 199.99,
-    rating: 4.8,
-    reviews: 342,
-    image: '⌨️',
-    inStock: true,
-  },
-  {
-    id: 3,
-    name: '4K Webcam',
-    price: 299.99,
-    rating: 4.6,
-    reviews: 128,
-    image: '📹',
-    inStock: false,
-  },
-]
-
 export default function DashboardPage() {
-
-  const isAuthenticated = useAuth();
-const router = useRouter();
-
-useEffect(() => {
-  if (!isAuthenticated) {
-    router.push("/login");
-  }
-}, [isAuthenticated]);
-
+  const { userId, isAuthenticated, logout } = useAppState();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<DashboardTab>('overview')
+  const [orders, setOrders] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push("/login");
+      return;
+    }
+
+    const fetchOrders = async () => {
+      try {
+        if (userId) {
+          const res = await API.get(`/orders/${userId}`);
+          setOrders(res.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch orders:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, [isAuthenticated, userId, router]);
+
+  const totalSpent = orders.reduce((sum, order) => sum + (order.totalPrice || 0), 0);
+
+  if (!isAuthenticated) return null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -101,22 +56,22 @@ useEffect(() => {
               {/* Profile Card */}
               <div className="bg-gradient-to-br from-primary/10 to-accent/10 p-6 space-y-4">
                 <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-primary text-primary-foreground text-2xl font-bold">
-                  SA
+                  {userId ? "U" : "G"}
                 </div>
                 <div>
-                  <h3 className="font-semibold text-foreground">{USER_PROFILE.name}</h3>
-                  <p className="text-sm text-muted-foreground">{USER_PROFILE.email}</p>
+                  <h3 className="font-semibold text-foreground">User Dashboard</h3>
+                  <p className="text-sm text-muted-foreground truncate">{userId}</p>
                 </div>
                 <div className="inline-block rounded-full bg-accent/20 px-3 py-1 text-xs font-medium text-accent">
-                  {USER_PROFILE.tier} Member
+                  Member
                 </div>
               </div>
 
               {/* Navigation */}
               <nav className="divide-y divide-border/50">
                 {[
-                  { id: 'overview', label: 'Overview', icon: ShoppingBag },
-                  { id: 'orders', label: 'Orders', icon: ShoppingBag },
+                  { id: 'overview', label: 'Overview', icon: Eye },
+                  { id: 'orders', label: 'My Orders', icon: ShoppingBag },
                   { id: 'wishlist', label: 'Wishlist', icon: Heart },
                   { id: 'profile', label: 'Profile Settings', icon: Settings },
                 ].map((item) => (
@@ -136,7 +91,13 @@ useEffect(() => {
               </nav>
 
               {/* Logout */}
-              <button className="w-full flex items-center space-x-3 px-6 py-4 text-left text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors border-t border-border/50">
+              <button 
+                onClick={() => {
+                  logout();
+                  router.push("/login");
+                }}
+                className="w-full flex items-center space-x-3 px-6 py-4 text-left text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors border-t border-border/50"
+              >
                 <LogOut className="h-5 w-5" />
                 <span>Logout</span>
               </button>
@@ -148,62 +109,69 @@ useEffect(() => {
             {/* Overview Tab */}
             {activeTab === 'overview' && (
               <div className="space-y-8">
-                <h2 className="text-2xl font-bold text-foreground">Welcome back, {USER_PROFILE.name}!</h2>
+                <h2 className="text-2xl font-bold text-foreground">Dashboard Overview</h2>
 
                 {/* Stats Grid */}
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
                   <div className="rounded-lg border border-border/50 bg-card p-6 space-y-3">
                     <p className="text-sm text-muted-foreground">Total Orders</p>
-                    <p className="text-3xl font-bold text-foreground">24</p>
-                    <p className="text-xs text-accent">Member since {USER_PROFILE.memberSince}</p>
+                    <p className="text-3xl font-bold text-foreground">{orders.length}</p>
+                    <p className="text-xs text-accent">Real-time update</p>
                   </div>
                   <div className="rounded-lg border border-border/50 bg-card p-6 space-y-3">
                     <p className="text-sm text-muted-foreground">Total Spent</p>
-                    <p className="text-3xl font-bold text-foreground">$2,847.50</p>
+                    <p className="text-3xl font-bold text-foreground">${totalSpent.toFixed(2)}</p>
                     <p className="text-xs text-accent">Across all purchases</p>
                   </div>
                   <div className="rounded-lg border border-border/50 bg-card p-6 space-y-3">
                     <p className="text-sm text-muted-foreground">Rewards Points</p>
-                    <p className="text-3xl font-bold text-accent">2,847</p>
+                    <p className="text-3xl font-bold text-accent">{Math.floor(totalSpent)}</p>
                     <p className="text-xs text-muted-foreground">Redeem for discounts</p>
                   </div>
                 </div>
 
-                {/* Recent Orders */}
+                {/* Recent Orders Preview */}
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-xl font-semibold text-foreground">Recent Orders</h3>
-                    <Link
-                      href="#orders"
+                    <button
                       onClick={() => setActiveTab('orders')}
                       className="text-sm text-accent hover:underline"
                     >
                       View all
-                    </Link>
+                    </button>
                   </div>
                   <div className="space-y-3">
-                    {USER_ORDERS.slice(0, 2).map((order) => (
-                      <div
-                        key={order.id}
-                        className="rounded-lg border border-border/50 bg-card p-4 flex items-center justify-between hover:shadow-subtle transition-shadow"
-                      >
-                        <div className="flex items-center space-x-4">
-                          <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center text-2xl">
-                            {order.image}
-                          </div>
-                          <div>
-                            <p className="font-semibold text-foreground">{order.id}</p>
-                            <p className="text-sm text-muted-foreground">{order.date}</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-semibold text-foreground">${order.total}</p>
-                          <span className="inline-block rounded-full bg-green-100 dark:bg-green-900/30 px-3 py-1 text-xs font-medium text-green-600 dark:text-green-400">
-                            {order.status}
-                          </span>
-                        </div>
+                    {isLoading ? (
+                      <div className="h-20 bg-muted animate-pulse rounded-lg" />
+                    ) : orders.length === 0 ? (
+                      <div className="p-8 text-center border border-dashed rounded-lg text-muted-foreground">
+                        No orders yet.
                       </div>
-                    ))}
+                    ) : (
+                      orders.slice(0, 3).map((order) => (
+                        <div
+                          key={order._id}
+                          className="rounded-lg border border-border/50 bg-card p-4 flex items-center justify-between hover:shadow-subtle transition-shadow"
+                        >
+                          <div className="flex items-center space-x-4">
+                            <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center text-2xl">
+                              📦
+                            </div>
+                            <div>
+                              <p className="font-semibold text-foreground">Order #{order._id.toString().slice(-8)}</p>
+                              <p className="text-sm text-muted-foreground">{new Date(order.createdAt).toLocaleDateString()}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold text-foreground">${order.totalPrice.toFixed(2)}</p>
+                            <span className="inline-block rounded-full bg-green-100 dark:bg-green-900/30 px-3 py-1 text-xs font-medium text-green-600 dark:text-green-400">
+                              {order.status}
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
               </div>
@@ -212,40 +180,55 @@ useEffect(() => {
             {/* Orders Tab */}
             {activeTab === 'orders' && (
               <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-foreground">Your Orders</h2>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold text-foreground">Order History</h2>
+                  <Link href="/orders" className="text-accent hover:underline text-sm font-medium">View Detailed History</Link>
+                </div>
                 <div className="space-y-3">
-                  {USER_ORDERS.map((order) => (
-                    <div
-                      key={order.id}
-                      className="rounded-lg border border-border/50 bg-card p-6 hover:shadow-subtle transition-shadow"
-                    >
-                      <div className="flex items-center justify-between mb-4">
-                        <div>
-                          <p className="font-semibold text-foreground">{order.id}</p>
-                          <p className="text-sm text-muted-foreground">{order.date}</p>
-                        </div>
-                        <span className="inline-block rounded-full bg-green-100 dark:bg-green-900/30 px-4 py-2 text-sm font-medium text-green-600 dark:text-green-400">
-                          {order.status}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className="text-3xl">{order.image}</div>
-                          <p className="text-sm text-muted-foreground">{order.items} item(s)</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-2xl font-bold text-accent">${order.total}</p>
-                          <Link
-                            href={`/order/${order.id}`}
-                            className="text-sm text-accent hover:underline flex items-center space-x-1"
-                          >
-                            <span>View Details</span>
-                            <ChevronRight className="h-4 w-4" />
-                          </Link>
-                        </div>
-                      </div>
+                  {isLoading ? (
+                    Array.from({ length: 3 }).map((_, i) => (
+                      <div key={i} className="h-32 bg-muted animate-pulse rounded-lg" />
+                    ))
+                  ) : orders.length === 0 ? (
+                    <div className="p-12 text-center border border-dashed rounded-lg space-y-4">
+                      <ShoppingBag className="h-12 w-12 mx-auto text-muted-foreground" />
+                      <p className="text-muted-foreground">You haven{"'"}t placed any orders yet.</p>
+                      <Link href="/products" className="inline-block bg-primary text-primary-foreground px-6 py-2 rounded-lg">Start Shopping</Link>
                     </div>
-                  ))}
+                  ) : (
+                    orders.map((order) => (
+                      <div
+                        key={order._id}
+                        className="rounded-lg border border-border/50 bg-card p-6 hover:shadow-subtle transition-shadow"
+                      >
+                        <div className="flex items-center justify-between mb-4">
+                          <div>
+                            <p className="font-semibold text-foreground">Order #{order._id.toString().slice(-8)}</p>
+                            <p className="text-sm text-muted-foreground">{new Date(order.createdAt).toLocaleString()}</p>
+                          </div>
+                          <span className="inline-block rounded-full bg-green-100 dark:bg-green-900/30 px-4 py-2 text-sm font-medium text-green-600 dark:text-green-400">
+                            {order.status}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <div className="text-3xl">📦</div>
+                            <p className="text-sm text-muted-foreground">{order.items?.length || 0} item(s)</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-2xl font-bold text-accent">${order.totalPrice.toFixed(2)}</p>
+                            <Link
+                              href="/orders"
+                              className="text-sm text-accent hover:underline flex items-center space-x-1"
+                            >
+                              <span>View Details</span>
+                              <ChevronRight className="h-4 w-4" />
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             )}
@@ -254,57 +237,10 @@ useEffect(() => {
             {activeTab === 'wishlist' && (
               <div className="space-y-6">
                 <h2 className="text-2xl font-bold text-foreground">Your Wishlist</h2>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  {WISHLIST_ITEMS.map((item) => (
-                    <div
-                      key={item.id}
-                      className="rounded-lg border border-border/50 bg-card overflow-hidden hover:shadow-elevation transition-shadow"
-                    >
-                      <div className="h-48 bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center text-5xl">
-                        {item.image}
-                      </div>
-                      <div className="p-4 space-y-3">
-                        <h3 className="font-semibold text-foreground line-clamp-2">
-                          {item.name}
-                        </h3>
-                        <div className="flex items-center space-x-2">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              className={`h-4 w-4 ${
-                                i < Math.floor(item.rating)
-                                  ? 'fill-yellow-400 text-yellow-400'
-                                  : 'text-muted'
-                              }`}
-                            />
-                          ))}
-                          <span className="text-xs text-muted-foreground">
-                            ({item.reviews})
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <p className="text-xl font-bold text-foreground">
-                            ${item.price}
-                          </p>
-                          {!item.inStock && (
-                            <span className="text-xs text-red-500 font-medium">
-                              Out of Stock
-                            </span>
-                          )}
-                        </div>
-                        <button
-                          disabled={!item.inStock}
-                          className={`w-full rounded-lg py-2 font-medium transition-colors ${
-                            item.inStock
-                              ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                              : 'bg-muted text-muted-foreground cursor-not-allowed'
-                          }`}
-                        >
-                          {item.inStock ? 'Add to Cart' : 'Notify Me'}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                <div className="p-12 text-center border border-dashed rounded-lg space-y-4">
+                  <Heart className="h-12 w-12 mx-auto text-muted-foreground" />
+                  <p className="text-muted-foreground">Your wishlist is currently empty.</p>
+                  <Link href="/products" className="inline-block bg-primary text-primary-foreground px-6 py-2 rounded-lg">Browse Products</Link>
                 </div>
               </div>
             )}
@@ -317,38 +253,29 @@ useEffect(() => {
                 <div className="rounded-lg border border-border/50 bg-card p-6 space-y-6">
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">
-                      Full Name
+                      User ID
                     </label>
                     <input
                       type="text"
-                      defaultValue={USER_PROFILE.name}
-                      className="w-full rounded-lg border border-border/50 bg-input px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
+                      disabled
+                      value={userId || ""}
+                      className="w-full rounded-lg border border-border/50 bg-muted px-4 py-3 text-foreground opacity-70 cursor-not-allowed"
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">
-                      Email
+                      Account Status
                     </label>
-                    <input
-                      type="email"
-                      defaultValue={USER_PROFILE.email}
-                      className="w-full rounded-lg border border-border/50 bg-input px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
-                    />
+                    <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-green-700 dark:text-green-400 text-sm">
+                      Your account is active and verified.
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Phone
-                    </label>
-                    <input
-                      type="tel"
-                      defaultValue={USER_PROFILE.phone}
-                      className="w-full rounded-lg border border-border/50 bg-input px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
-                    />
-                  </div>
-
-                  <button className="w-full rounded-lg bg-primary text-primary-foreground py-3 font-semibold hover:bg-primary/90 transition-colors">
+                  <button 
+                    onClick={() => toast.info("Profile updates are handled via registration.")}
+                    className="w-full rounded-lg bg-primary text-primary-foreground py-3 font-semibold hover:bg-primary/90 transition-colors"
+                  >
                     Save Changes
                   </button>
                 </div>

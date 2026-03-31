@@ -3,9 +3,12 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 // REGISTER
-export const registerUser = async (req, res) => {
+export const registerUser = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "Name, email and password are required" });
+    }
 
     // check if user exists
     const userExists = await User.findOne({ email });
@@ -36,14 +39,17 @@ export const registerUser = async (req, res) => {
     });
 
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    next(error);
   }
 };
 
 // LOGIN
-export const loginUser = async (req, res) => {
+export const loginUser = async (req, res, next) => {
   try {
     const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
+    }
 
     const user = await User.findOne({ email });
 
@@ -63,6 +69,6 @@ export const loginUser = async (req, res) => {
     }
 
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    next(error);
   }
 };
