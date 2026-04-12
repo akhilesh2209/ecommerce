@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
-import { User, ShoppingBag, Heart, Settings, LogOut, ChevronRight, Star, Eye } from 'lucide-react'
+import { User, ShoppingBag, Heart, Settings, LogOut, ChevronRight, Eye, Package, TrendingUp, Star, Clock, ArrowUpRight } from 'lucide-react'
 import Link from 'next/link'
 import API from "@/lib/api";
 import { useAppState } from "@/components/app-state-provider";
@@ -12,19 +12,43 @@ import { toast } from "sonner";
 
 type DashboardTab = 'overview' | 'orders' | 'wishlist' | 'profile'
 
+const StatCard = ({ label, value, sub, color }: { label: string; value: string; sub: string; color: string }) => (
+  <div className="card-luxury p-6 space-y-3">
+    <p className="text-sm text-muted-foreground font-medium">{label}</p>
+    <p className={`font-display text-3xl font-bold ${color}`}>{value}</p>
+    <p className={`text-xs ${color === 'text-foreground' ? 'text-accent' : 'text-muted-foreground'}`}>{sub}</p>
+  </div>
+);
+
+const OrderSkeleton = () => (
+  <div className="space-y-3">
+    {[1,2,3].map(i => (
+      <div key={i} className="card-luxury p-5 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="shimmer w-12 h-12 rounded-xl" />
+          <div className="space-y-2">
+            <div className="shimmer h-4 w-36 rounded" />
+            <div className="shimmer h-3 w-24 rounded" />
+          </div>
+        </div>
+        <div className="text-right space-y-2">
+          <div className="shimmer h-5 w-20 rounded" />
+          <div className="shimmer h-5 w-16 rounded-full" />
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
 export default function DashboardPage() {
   const { userId, isAuthenticated, logout } = useAppState();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<DashboardTab>('overview')
-  const [orders, setOrders] = useState<any[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState<DashboardTab>('overview');
+  const [orders, setOrders] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push("/login");
-      return;
-    }
-
+    if (!isAuthenticated) { router.push("/login"); return; }
     const fetchOrders = async () => {
       try {
         if (userId) {
@@ -37,244 +61,231 @@ export default function DashboardPage() {
         setIsLoading(false);
       }
     };
-
     fetchOrders();
   }, [isAuthenticated, userId, router]);
 
   const totalSpent = orders.reduce((sum, order) => sum + (order.totalPrice || 0), 0);
-
   if (!isAuthenticated) return null;
 
+  const navItems = [
+    { id: 'overview', label: 'Overview',         icon: Eye },
+    { id: 'orders',   label: 'My Orders',        icon: ShoppingBag },
+    { id: 'wishlist', label: 'Wishlist',          icon: Heart },
+    { id: 'profile',  label: 'Profile Settings',  icon: Settings },
+  ];
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-warm-gradient">
       <Navbar />
       <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="grid gap-8 lg:grid-cols-4">
           {/* Sidebar */}
           <div className="lg:col-span-1">
-            <div className="rounded-lg border border-border/50 bg-card overflow-hidden sticky top-20">
-              {/* Profile Card */}
-              <div className="bg-gradient-to-br from-primary/10 to-accent/10 p-6 space-y-4">
-                <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-primary text-primary-foreground text-2xl font-bold">
-                  {userId ? "U" : "G"}
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground">User Dashboard</h3>
-                  <p className="text-sm text-muted-foreground truncate">{userId}</p>
-                </div>
-                <div className="inline-block rounded-full bg-accent/20 px-3 py-1 text-xs font-medium text-accent">
-                  Member
+            <div className="card-luxury overflow-hidden sticky top-20">
+              {/* Profile header */}
+              <div className="relative p-6 pb-8 overflow-hidden" style={{
+                background: 'linear-gradient(135deg, hsl(20 15% 12%) 0%, hsl(25 15% 18%) 100%)',
+              }}>
+                <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-accent/10 -translate-y-1/2 translate-x-1/2" />
+                <div className="relative space-y-3">
+                  <div className="w-16 h-16 rounded-2xl bg-accent flex items-center justify-center text-2xl font-bold text-white shadow-lg">
+                    {userId ? userId.toString()[0].toUpperCase() : "U"}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-white">My Account</h3>
+                    <p className="text-xs text-white/50 font-mono-custom mt-0.5 truncate">{userId}</p>
+                  </div>
+                  <span className="badge badge-accent text-xs">Premium Member</span>
                 </div>
               </div>
 
-              {/* Navigation */}
-              <nav className="divide-y divide-border/50">
-                {[
-                  { id: 'overview', label: 'Overview', icon: Eye },
-                  { id: 'orders', label: 'My Orders', icon: ShoppingBag },
-                  { id: 'wishlist', label: 'Wishlist', icon: Heart },
-                  { id: 'profile', label: 'Profile Settings', icon: Settings },
-                ].map((item) => (
+              {/* Nav */}
+              <nav className="p-2">
+                {navItems.map(item => (
                   <button
                     key={item.id}
                     onClick={() => setActiveTab(item.id as DashboardTab)}
-                    className={`w-full flex items-center space-x-3 px-6 py-4 text-left transition-colors ${
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left text-sm font-medium transition-all ${
                       activeTab === item.id
-                        ? 'bg-accent/10 text-accent font-medium'
-                        : 'text-foreground/70 hover:text-foreground'
+                        ? 'bg-accent/10 text-accent'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                     }`}
                   >
-                    <item.icon className="h-5 w-5" />
+                    <item.icon className="w-4 h-4" />
                     <span>{item.label}</span>
+                    {activeTab === item.id && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-accent" />}
                   </button>
                 ))}
               </nav>
 
-              {/* Logout */}
-              <button 
-                onClick={() => {
-                  logout();
-                  router.push("/login");
-                }}
-                className="w-full flex items-center space-x-3 px-6 py-4 text-left text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors border-t border-border/50"
-              >
-                <LogOut className="h-5 w-5" />
-                <span>Logout</span>
-              </button>
+              <div className="p-2 border-t border-border mt-2">
+                <button
+                  onClick={() => { logout(); router.push("/login"); }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-destructive hover:bg-destructive/5 transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Sign out
+                </button>
+              </div>
             </div>
           </div>
 
           {/* Main Content */}
-          <div className="lg:col-span-3">
-            {/* Overview Tab */}
-            {activeTab === 'overview' && (
-              <div className="space-y-8">
-                <h2 className="text-2xl font-bold text-foreground">Dashboard Overview</h2>
+          <div className="lg:col-span-3 space-y-6">
 
-                {/* Stats Grid */}
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-                  <div className="rounded-lg border border-border/50 bg-card p-6 space-y-3">
-                    <p className="text-sm text-muted-foreground">Total Orders</p>
-                    <p className="text-3xl font-bold text-foreground">{orders.length}</p>
-                    <p className="text-xs text-accent">Real-time update</p>
-                  </div>
-                  <div className="rounded-lg border border-border/50 bg-card p-6 space-y-3">
-                    <p className="text-sm text-muted-foreground">Total Spent</p>
-                    <p className="text-3xl font-bold text-foreground">${totalSpent.toFixed(2)}</p>
-                    <p className="text-xs text-accent">Across all purchases</p>
-                  </div>
-                  <div className="rounded-lg border border-border/50 bg-card p-6 space-y-3">
-                    <p className="text-sm text-muted-foreground">Rewards Points</p>
-                    <p className="text-3xl font-bold text-accent">{Math.floor(totalSpent)}</p>
-                    <p className="text-xs text-muted-foreground">Redeem for discounts</p>
-                  </div>
+            {/* Overview */}
+            {activeTab === 'overview' && (
+              <div className="space-y-6 opacity-0 animate-fade-in-up">
+                <div>
+                  <p className="section-label mb-1">Dashboard</p>
+                  <h2 className="font-display text-3xl font-bold text-foreground">Overview</h2>
                 </div>
 
-                {/* Recent Orders Preview */}
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  <StatCard label="Total Orders" value={String(orders.length)} sub="Lifetime purchases" color="text-foreground" />
+                  <StatCard label="Total Spent" value={`$${totalSpent.toFixed(2)}`} sub="Across all orders" color="text-foreground" />
+                  <StatCard label="Reward Points" value={String(Math.floor(totalSpent))} sub="Redeem for discounts" color="text-accent" />
+                </div>
+
+                {/* Recent orders */}
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-xl font-semibold text-foreground">Recent Orders</h3>
-                    <button
-                      onClick={() => setActiveTab('orders')}
-                      className="text-sm text-accent hover:underline"
-                    >
-                      View all
+                    <h3 className="font-display text-xl font-bold text-foreground">Recent Orders</h3>
+                    <button onClick={() => setActiveTab('orders')} className="text-sm text-accent flex items-center gap-1 hover:gap-2 transition-all">
+                      View all <ArrowUpRight className="w-4 h-4" />
                     </button>
                   </div>
-                  <div className="space-y-3">
-                    {isLoading ? (
-                      <div className="h-20 bg-muted animate-pulse rounded-lg" />
-                    ) : orders.length === 0 ? (
-                      <div className="p-8 text-center border border-dashed rounded-lg text-muted-foreground">
-                        No orders yet.
-                      </div>
-                    ) : (
-                      orders.slice(0, 3).map((order) => (
-                        <div
-                          key={order._id}
-                          className="rounded-lg border border-border/50 bg-card p-4 flex items-center justify-between hover:shadow-subtle transition-shadow"
-                        >
-                          <div className="flex items-center space-x-4">
-                            <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center text-2xl">
-                              📦
-                            </div>
-                            <div>
-                              <p className="font-semibold text-foreground">Order #{order._id.toString().slice(-8)}</p>
-                              <p className="text-sm text-muted-foreground">{new Date(order.createdAt).toLocaleDateString()}</p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-semibold text-foreground">${order.totalPrice.toFixed(2)}</p>
-                            <span className="inline-block rounded-full bg-green-100 dark:bg-green-900/30 px-3 py-1 text-xs font-medium text-green-600 dark:text-green-400">
-                              {order.status}
-                            </span>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Orders Tab */}
-            {activeTab === 'orders' && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-bold text-foreground">Order History</h2>
-                  <Link href="/orders" className="text-accent hover:underline text-sm font-medium">View Detailed History</Link>
-                </div>
-                <div className="space-y-3">
-                  {isLoading ? (
-                    Array.from({ length: 3 }).map((_, i) => (
-                      <div key={i} className="h-32 bg-muted animate-pulse rounded-lg" />
-                    ))
-                  ) : orders.length === 0 ? (
-                    <div className="p-12 text-center border border-dashed rounded-lg space-y-4">
-                      <ShoppingBag className="h-12 w-12 mx-auto text-muted-foreground" />
-                      <p className="text-muted-foreground">You haven{"'"}t placed any orders yet.</p>
-                      <Link href="/products" className="inline-block bg-primary text-primary-foreground px-6 py-2 rounded-lg">Start Shopping</Link>
+                  {isLoading ? <OrderSkeleton /> : orders.length === 0 ? (
+                    <div className="card-luxury p-10 text-center space-y-3">
+                      <Package className="w-10 h-10 mx-auto text-muted-foreground" />
+                      <p className="text-muted-foreground">No orders yet.</p>
+                      <Link href="/products" className="btn-accent inline-flex px-6 py-2.5 text-sm">Browse Products</Link>
                     </div>
-                  ) : (
-                    orders.map((order) => (
-                      <div
-                        key={order._id}
-                        className="rounded-lg border border-border/50 bg-card p-6 hover:shadow-subtle transition-shadow"
-                      >
-                        <div className="flex items-center justify-between mb-4">
-                          <div>
-                            <p className="font-semibold text-foreground">Order #{order._id.toString().slice(-8)}</p>
-                            <p className="text-sm text-muted-foreground">{new Date(order.createdAt).toLocaleString()}</p>
-                          </div>
-                          <span className="inline-block rounded-full bg-green-100 dark:bg-green-900/30 px-4 py-2 text-sm font-medium text-green-600 dark:text-green-400">
-                            {order.status}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
-                            <div className="text-3xl">📦</div>
-                            <p className="text-sm text-muted-foreground">{order.items?.length || 0} item(s)</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-2xl font-bold text-accent">${order.totalPrice.toFixed(2)}</p>
-                            <Link
-                              href="/orders"
-                              className="text-sm text-accent hover:underline flex items-center space-x-1"
-                            >
-                              <span>View Details</span>
-                              <ChevronRight className="h-4 w-4" />
-                            </Link>
-                          </div>
+                  ) : orders.slice(0, 3).map((order) => (
+                    <div key={order._id} className="card-luxury p-5 flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-warm-gradient flex items-center justify-center text-2xl">📦</div>
+                        <div>
+                          <p className="font-semibold text-foreground text-sm">Order #{order._id.toString().slice(-8).toUpperCase()}</p>
+                          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                            <Clock className="w-3 h-3" /> {new Date(order.createdAt).toLocaleDateString()}
+                          </p>
                         </div>
                       </div>
-                    ))
-                  )}
+                      <div className="text-right">
+                        <p className="font-bold text-foreground">${order.totalPrice.toFixed(2)}</p>
+                        <span className="badge badge-success text-xs mt-1">{order.status}</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
 
-            {/* Wishlist Tab */}
-            {activeTab === 'wishlist' && (
-              <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-foreground">Your Wishlist</h2>
-                <div className="p-12 text-center border border-dashed rounded-lg space-y-4">
-                  <Heart className="h-12 w-12 mx-auto text-muted-foreground" />
-                  <p className="text-muted-foreground">Your wishlist is currently empty.</p>
-                  <Link href="/products" className="inline-block bg-primary text-primary-foreground px-6 py-2 rounded-lg">Browse Products</Link>
-                </div>
-              </div>
-            )}
-
-            {/* Profile Tab */}
-            {activeTab === 'profile' && (
-              <div className="space-y-6 max-w-2xl">
-                <h2 className="text-2xl font-bold text-foreground">Profile Settings</h2>
-
-                <div className="rounded-lg border border-border/50 bg-card p-6 space-y-6">
+            {/* Orders tab */}
+            {activeTab === 'orders' && (
+              <div className="space-y-4 opacity-0 animate-fade-in-up">
+                <div className="flex items-center justify-between">
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      User ID
-                    </label>
+                    <p className="section-label mb-1">History</p>
+                    <h2 className="font-display text-3xl font-bold text-foreground">Order History</h2>
+                  </div>
+                  <Link href="/orders" className="btn-outline px-4 py-2 text-sm">
+                    Detailed view <ArrowUpRight className="w-4 h-4" />
+                  </Link>
+                </div>
+                {isLoading ? <OrderSkeleton /> : orders.length === 0 ? (
+                  <div className="card-luxury p-16 text-center space-y-4">
+                    <ShoppingBag className="w-12 h-12 mx-auto text-muted-foreground" />
+                    <h3 className="font-display text-xl font-bold text-foreground">No orders yet</h3>
+                    <p className="text-muted-foreground">Start shopping to see your orders here.</p>
+                    <Link href="/products" className="btn-primary inline-flex px-8 py-3">Start Shopping</Link>
+                  </div>
+                ) : orders.map((order) => (
+                  <div key={order._id} className="card-luxury p-6">
+                    <div className="flex items-start justify-between gap-4 mb-4">
+                      <div>
+                        <p className="font-semibold text-foreground">Order #{order._id.toString().slice(-8).toUpperCase()}</p>
+                        <p className="text-sm text-muted-foreground mt-0.5">{new Date(order.createdAt).toLocaleString()}</p>
+                      </div>
+                      <span className="badge badge-success">{order.status}</span>
+                    </div>
+                    <div className="flex items-center justify-between pt-4 border-t border-border">
+                      <p className="text-sm text-muted-foreground">{order.items?.length || 0} items</p>
+                      <div className="flex items-center gap-4">
+                        <p className="font-display text-xl font-bold text-accent">${order.totalPrice.toFixed(2)}</p>
+                        <Link href="/orders" className="text-sm text-accent hover:underline flex items-center gap-1">
+                          Details <ChevronRight className="w-4 h-4" />
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Wishlist tab */}
+            {activeTab === 'wishlist' && (
+              <div className="space-y-4 opacity-0 animate-fade-in-up">
+                <div>
+                  <p className="section-label mb-1">Saved</p>
+                  <h2 className="font-display text-3xl font-bold text-foreground">Wishlist</h2>
+                </div>
+                <div className="card-luxury p-16 text-center space-y-4">
+                  <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mx-auto animate-float">
+                    <Heart className="w-10 h-10 text-muted-foreground" />
+                  </div>
+                  <h3 className="font-display text-xl font-bold text-foreground">No saved items</h3>
+                  <p className="text-muted-foreground max-w-sm mx-auto">
+                    Browse products and tap the heart icon to save items you love.
+                  </p>
+                  <Link href="/products" className="btn-primary inline-flex px-8 py-3">
+                    Browse Products
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {/* Profile tab */}
+            {activeTab === 'profile' && (
+              <div className="space-y-6 max-w-2xl opacity-0 animate-fade-in-up">
+                <div>
+                  <p className="section-label mb-1">Settings</p>
+                  <h2 className="font-display text-3xl font-bold text-foreground">Profile</h2>
+                </div>
+
+                <div className="card-luxury p-6 space-y-6">
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-foreground/80">User ID</label>
                     <input
                       type="text"
                       disabled
                       value={userId || ""}
-                      className="w-full rounded-lg border border-border/50 bg-muted px-4 py-3 text-foreground opacity-70 cursor-not-allowed"
+                      className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-muted-foreground font-mono-custom text-sm cursor-not-allowed"
                     />
+                    <p className="text-xs text-muted-foreground">Your unique identifier — this cannot be changed.</p>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Account Status
-                    </label>
-                    <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-green-700 dark:text-green-400 text-sm">
-                      Your account is active and verified.
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-foreground/80">Account Status</label>
+                    <div className="flex items-center gap-2 px-4 py-3 bg-green-50 border border-green-200 rounded-xl">
+                      <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                      <span className="text-sm text-green-700 font-medium">Active & Verified</span>
                     </div>
                   </div>
 
-                  <button 
-                    onClick={() => toast.info("Profile updates are handled via registration.")}
-                    className="w-full rounded-lg bg-primary text-primary-foreground py-3 font-semibold hover:bg-primary/90 transition-colors"
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-foreground/80">Membership</label>
+                    <div className="flex items-center gap-3 px-4 py-3 bg-accent/5 border border-accent/20 rounded-xl">
+                      <Star className="w-4 h-4 text-accent" />
+                      <span className="text-sm text-foreground font-medium">Premium Member</span>
+                      <span className="ml-auto badge badge-accent">Active</span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => toast.info("Profile updates are handled via account registration.")}
+                    className="btn-primary w-full py-3.5"
                   >
                     Save Changes
                   </button>
@@ -286,5 +297,5 @@ export default function DashboardPage() {
       </main>
       <Footer />
     </div>
-  )
+  );
 }
