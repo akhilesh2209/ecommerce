@@ -12,66 +12,73 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useAppState } from "@/components/app-state-provider";
 
-export default function ProductsPage() {
+export default function HomePage() {
   const router = useRouter();
   const { userId, bumpCartCount, refreshCartCount } = useAppState();
   const [isFiltersOpen, setIsFiltersOpen] = useState(false)
   const [sortBy, setSortBy] = useState('featured')
   const [products, setProducts] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-  const fetchProducts = async () => {
+    const fetchHome = async () => {
+      try {
+        const res = await API.get("/products");
+        const homeProducts = res.data.filter((product: any) => 
+          product.category?.toLowerCase() === 'home'
+        );
+        setProducts(homeProducts);
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to load home products");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchHome();
+  }, []);
+
+  const addToCart = async (productId: string) => {
     try {
-      const res = await API.get("/products");
-      setProducts(res.data);
+      if (!userId) {
+        toast.error("Please login first");
+        router.push("/login");
+        return;
+      }
+
+      await API.post("/cart", {
+        userId,
+        productId,
+      });
+
+      bumpCartCount(1);
+      refreshCartCount();
+      toast.success("Added to cart ");
     } catch (error) {
       console.error(error);
+      toast.error("Error adding to cart");
     }
   };
 
-  fetchProducts();
-}, []);
+  const buyNow = async (productId: string) => {
+    try {
+      if (!userId) {
+        toast.error("Please login first");
+        router.push("/login");
+        return;
+      }
 
-const addToCart = async (productId: string) => {
-  try {
-    if (!userId) {
-      toast.error("Please login first");
-      router.push("/login");
-      return;
+      await API.post("/cart", { userId, productId });
+      bumpCartCount(1);
+      refreshCartCount();
+      toast.success("Added to cart. Redirecting to checkout...");
+      router.push("/checkout");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to proceed to checkout");
     }
-
-    await API.post("/cart", {
-      userId,
-      productId,
-    });
-
-    bumpCartCount(1);
-    refreshCartCount();
-    toast.success("Added to cart 🛒");
-  } catch (error) {
-    console.error(error);
-    toast.error("Error adding to cart");
-  }
-};
-
-const buyNow = async (productId: string) => {
-  try {
-    if (!userId) {
-      toast.error("Please login first");
-      router.push("/login");
-      return;
-    }
-
-    await API.post("/cart", { userId, productId });
-    bumpCartCount(1);
-    refreshCartCount();
-    toast.success("Added to cart. Redirecting to checkout...");
-    router.push("/checkout");
-  } catch (error) {
-    console.error(error);
-    toast.error("Failed to proceed to checkout");
-  }
-};
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -79,9 +86,9 @@ const buyNow = async (productId: string) => {
       <main className="mx-auto max-w-7xl">
         {/* Page Header */}
         <div className="border-b border-border/50 px-4 py-8 sm:px-6 lg:px-8">
-          <h1 className="text-4xl font-bold text-foreground">Shop Products</h1>
+          <h1 className="text-4xl font-bold text-foreground">Home & Living</h1>
           <p className="mt-2 text-muted-foreground">
-            Browse our collection of {products.length} premium products
+            Transform your space with our home and lifestyle products
           </p>
         </div>
 
@@ -123,31 +130,36 @@ const buyNow = async (productId: string) => {
             </div>
 
             {/* Products Grid */}
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {products.map((product) => (
- <ProductCard
-  key={product._id}
-  id={product._id}
-  name={product.name}
-  price={product.price}
-  originalPrice={product.price}
-  rating={4.5}
-  reviews={100}
-  category={product.category}
-  image={product.image || "📦"}
-  inStock={product.countInStock > 0}
-  onAddToCart={() => addToCart(product._id)}   // 👈 ADD THIS
-  onBuyNow={() => buyNow(product._id)}
-/>
-))}
-            </div>
-
-            {/* Load More Button */}
-            <div className="text-center pt-8">
-              <button className="px-8 py-3 rounded-lg border-2 border-primary text-primary font-semibold hover:bg-primary/5 transition-all duration-200">
-                Load More Products
-              </button>
-            </div>
+            {isLoading ? (
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="h-96 rounded-xl bg-muted animate-pulse" />
+                ))}
+              </div>
+            ) : products.length > 0 ? (
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {products.map((product) => (
+                  <ProductCard
+                    key={product._id}
+                    id={product._id}
+                    name={product.name}
+                    price={product.price}
+                    originalPrice={product.price}
+                    rating={4.5}
+                    reviews={100}
+                    category={product.category}
+                    image={product.image || ""}
+                    inStock={product.countInStock > 0}
+                    onAddToCart={() => addToCart(product._id)}
+                    onBuyNow={() => buyNow(product._id)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-20">
+                <p className="text-muted-foreground">No home products found.</p>
+              </div>
+            )}
           </div>
         </div>
 

@@ -114,7 +114,15 @@ const buyNow = async () => {
           {/* Left: Product Image */}
           <div className="space-y-4">
             <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 h-96 flex items-center justify-center">
-              <div className="text-8xl">{product?.image}</div>
+              {product?.image && product.image.startsWith('http') ? (
+                <img 
+                  src={product.image} 
+                  alt={product.name}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="text-8xl">????</div>
+              )}
             </div>
             <div className="grid grid-cols-4 gap-2">
               {[1, 2, 3, 4].map((i) => (
@@ -122,7 +130,15 @@ const buyNow = async () => {
                   key={i}
                   className="overflow-hidden rounded-lg bg-gradient-to-br from-primary/10 to-accent/10 h-24 flex items-center justify-center hover:ring-2 hover:ring-accent transition-all"
                 >
-                  <div className="text-3xl">{product?.image}</div>
+                  {product?.image && product.image.startsWith('http') ? (
+                    <img 
+                      src={product.image} 
+                      alt={product.name}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="text-3xl">????</div>
+                  )}
                 </button>
               ))}
             </div>

@@ -47,11 +47,11 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     const fetchCart = async () => {
+      // ✅ FIX: wait until userId is available before fetching
+      if (!userId) return;
+
       try {
-        if (!userId) {
-          setCartItems([]);
-          return;
-        }
+        // ✅ FIX: restored correct URL — your backend route is GET /api/cart/:userId
         const res = await API.get(`/cart/${userId}`);
         setCartItems(res.data || []);
       } catch (error) {
@@ -64,6 +64,7 @@ export default function CheckoutPage() {
     };
 
     fetchCart();
+    // ✅ FIX: keep [userId] so it re-fetches once userId is loaded from context
   }, [userId]);
 
   const cartSubtotal = cartItems.reduce(
@@ -353,7 +354,7 @@ export default function CheckoutPage() {
                 <div className="flex gap-3">
                   <button
                     onClick={() => handleStepChange('payment')}
-                    className="flex-1 rounded-lg border-2 border-border/50 text-foreground py-3 font-semibold hover:border-accent transition-colors"
+                    className="flex-1 rounded-lg border-2 border-border/50 text-foreground py-3 font-semibond hover:border-accent transition-colors"
                   >
                     Back
                   </button>

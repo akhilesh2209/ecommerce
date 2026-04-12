@@ -22,7 +22,6 @@ export const metadata: Metadata = {
   title: 'PrimeStore - Premium E-Commerce',
   description: 'Discover premium products with AI-powered recommendations and seamless checkout experience',
   generator: 'v0.app',
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=5',
   icons: {
     icon: [
       {

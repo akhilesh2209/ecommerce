@@ -9,11 +9,14 @@ type AppStateContextType = {
   userId: string | null;
   isAuthenticated: boolean;
   cartCount: number;
+  wishlistCount: number;
   isCartSyncing: boolean;
   login: (token: string, userId: string) => Promise<void>;
   logout: () => void;
   refreshCartCount: () => Promise<void>;
+  refreshWishlistCount: () => Promise<void>;
   bumpCartCount: (delta: number) => void;
+  bumpWishlistCount: (delta: number) => void;
   setCartCountFromItems: (items: Array<{ quantity?: number }>) => void;
 };
 
@@ -32,6 +35,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [cartCount, setCartCount] = useState(0);
+  const [wishlistCount, setWishlistCount] = useState(0);
   const [isCartSyncing, setIsCartSyncing] = useState(false);
 
   const syncAuthFromStorage = useCallback(() => {
@@ -65,6 +69,21 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const refreshWishlistCount = useCallback(async () => {
+    const auth = getStoredAuth();
+    if (!auth.userId) {
+      setWishlistCount(0);
+      return;
+    }
+
+    try {
+      const res = await API.get(`/wishlist/${auth.userId}`);
+      setWishlistCount(res.data.length);
+    } catch (error) {
+      console.error("Failed to refresh wishlist count:", error);
+    }
+  }, []);
+
   const login = useCallback(async (nextToken: string, nextUserId: string) => {
     if (typeof window !== "undefined") {
       window.localStorage.setItem("token", nextToken);
@@ -73,7 +92,8 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     setToken(nextToken);
     setUserId(nextUserId);
     await refreshCartCount();
-  }, [refreshCartCount]);
+    await refreshWishlistCount();
+  }, [refreshCartCount, refreshWishlistCount]);
 
   const logout = useCallback(() => {
     if (typeof window !== "undefined") {
@@ -83,10 +103,15 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     setToken(null);
     setUserId(null);
     setCartCount(0);
+    setWishlistCount(0);
   }, []);
 
   const bumpCartCount = useCallback((delta: number) => {
     setCartCount((prev) => Math.max(0, prev + delta));
+  }, []);
+
+  const bumpWishlistCount = useCallback((delta: number) => {
+    setWishlistCount((prev) => Math.max(0, prev + delta));
   }, []);
 
   const setCartCountFromItems = useCallback((items: Array<{ quantity?: number }>) => {
@@ -101,7 +126,8 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!token || !userId) return;
     refreshCartCount();
-  }, [pathname, token, userId, refreshCartCount]);
+    refreshWishlistCount();
+  }, [pathname, token, userId, refreshCartCount, refreshWishlistCount]);
 
   useEffect(() => {
     const onStorage = () => syncAuthFromStorage();
@@ -114,13 +140,16 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     userId,
     isAuthenticated: Boolean(token && userId),
     cartCount,
+    wishlistCount,
     isCartSyncing,
     login,
     logout,
     refreshCartCount,
+    refreshWishlistCount,
     bumpCartCount,
+    bumpWishlistCount,
     setCartCountFromItems,
-  }), [token, userId, cartCount, isCartSyncing, login, logout, refreshCartCount, bumpCartCount, setCartCountFromItems]);
+  }), [token, userId, cartCount, wishlistCount, isCartSyncing, login, logout, refreshCartCount, refreshWishlistCount, bumpCartCount, bumpWishlistCount, setCartCountFromItems]);
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;
 }

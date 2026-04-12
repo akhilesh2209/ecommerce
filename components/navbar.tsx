@@ -1,13 +1,14 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Heart, Search, ShoppingCart, Menu, X, ChevronDown } from 'lucide-react'
 import { ThemeToggle } from './theme-toggle'
 import { useAppState } from './app-state-provider'
+import API from '@/lib/api'
 
 export function Navbar() {
-  const { isAuthenticated, logout, cartCount } = useAppState();
+  const { isAuthenticated, logout, cartCount, wishlistCount } = useAppState();
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
 
@@ -59,9 +60,14 @@ export function Navbar() {
             )}
 
             {/* Icons */}
-            <button className="rounded-lg p-2 hover:bg-muted" aria-label="Wishlist">
+            <Link href="/wishlist" className="relative rounded-lg p-2 hover:bg-muted" aria-label="Wishlist">
               <Heart className="h-5 w-5" />
-            </button>
+              {wishlistCount > 0 ? (
+                <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-xs font-bold text-white">
+                  {wishlistCount > 99 ? "99+" : wishlistCount}
+                </span>
+              ) : null}
+            </Link>
 
             <Link href="/cart" className="relative rounded-lg p-2 hover:bg-muted" aria-label="Shopping Cart">
               <ShoppingCart className="h-5 w-5" />

@@ -2,7 +2,10 @@
 
 import { Star, Heart, ShoppingCart, Share2 } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import API from '@/lib/api'
+import { toast } from 'sonner'
+import { useAppState } from './app-state-provider'
 
 interface ProductCardProps {
   onAddToCart?: () => void;
@@ -33,9 +36,50 @@ export function ProductCard({
   onAddToCart,
   onBuyNow
 }: ProductCardProps) {
+  const { userId, refreshWishlistCount } = useAppState();
   const [isWishlisted, setIsWishlisted] = useState(false)
   const [isAdding, setIsAdding] = useState(false)
   const [isBuying, setIsBuying] = useState(false)
+
+  useEffect(() => {
+    const checkWishlistStatus = async () => {
+      if (!userId) return;
+      
+      try {
+        const res = await API.get(`/wishlist/check?userId=${userId}&productId=${id}`);
+        setIsWishlisted(res.data.isInWishlist);
+      } catch (error) {
+        console.error("Failed to check wishlist status:", error);
+      }
+    };
+
+    checkWishlistStatus();
+  }, [userId, id]);
+
+  const toggleWishlist = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!userId) {
+      toast.error("Please login to add to wishlist");
+      return;
+    }
+
+    try {
+      if (isWishlisted) {
+        await API.delete("/wishlist", { data: { userId, productId: id } });
+        toast.success("Removed from wishlist");
+        setIsWishlisted(false);
+        refreshWishlistCount();
+      } else {
+        await API.post("/wishlist", { userId, productId: id });
+        toast.success("Added to wishlist ");
+        setIsWishlisted(true);
+        refreshWishlistCount();
+      }
+    } catch (error) {
+      toast.error("Failed to update wishlist");
+      console.error(error);
+    }
+  };
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault()
@@ -59,21 +103,52 @@ export function ProductCard({
     }
   }
 
+  const handleShare = () => {
+    const shareUrl = `${window.location.origin}/product/${id}`;
+    const shareText = `Check out ${name} for $${price}!`;
+    
+    if (navigator.share) {
+      navigator.share({
+        title: name,
+        text: shareText,
+        url: shareUrl,
+      }).catch((error) => {
+        console.log('Error sharing:', error);
+        copyToClipboard(shareUrl);
+      });
+    } else {
+      copyToClipboard(shareUrl);
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      toast.success("Link copied to clipboard!");
+    }).catch(() => {
+      toast.error("Failed to copy link");
+    });
+  };
+
   return (
     <div className="group overflow-hidden rounded-xl border border-border/50 bg-card shadow-subtle hover:shadow-elevation transition-all duration-300 hover:-translate-y-1 flex flex-col h-full">
       {/* Product Image */}
       <div className="relative overflow-hidden bg-gradient-to-br from-primary/10 to-accent/10 h-56 flex items-center justify-center flex-shrink-0">
-        <div className="text-6xl group-hover:scale-110 transition-transform duration-300">
-          {image}
-        </div>
+        {image && image.startsWith('http') ? (
+          <img 
+            src={image} 
+            alt={name}
+            className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-300"
+          />
+        ) : (
+          <div className="text-6xl group-hover:scale-110 transition-transform duration-300">
+            ????
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="absolute right-4 top-4 flex flex-col space-y-2 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
-            onClick={(e) => {
-              e.preventDefault()
-              setIsWishlisted(!isWishlisted)
-            }}
+            onClick={toggleWishlist}
             className={`rounded-full p-2 shadow-subtle transition-all ${
               isWishlisted
                 ? 'bg-red-500 text-white'
@@ -83,7 +158,10 @@ export function ProductCard({
             <Heart className={`h-5 w-5 ${isWishlisted ? 'fill-current' : ''}`} />
           </button>
           <button 
-            onClick={(e) => e.preventDefault()}
+            onClick={(e) => {
+              e.preventDefault();
+              handleShare();
+            }}
             className="rounded-full bg-white/90 p-2 shadow-subtle hover:bg-white transition-all"
           >
             <Share2 className="h-5 w-5" />

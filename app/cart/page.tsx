@@ -122,8 +122,18 @@ export default function CartPage() {
                   className="flex gap-6 rounded-lg border border-border/50 bg-card p-6 hover:shadow-subtle transition-shadow"
                 >
                   {/* Image */}
-                  <div className="h-24 w-24 flex-shrink-0 rounded-lg bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center text-4xl">
-                    {item.product?.image || "📦"}
+                  <div className="h-24 w-24 flex-shrink-0 rounded-lg bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center overflow-hidden">
+                    {item.product?.image && item.product.image.startsWith('http') ? (
+                      <img 
+                        src={item.product.image} 
+                        alt={item.product.name}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="text-4xl">
+                        ???
+                      </div>
+                    )}
                   </div>
 
                   {/* Details */}

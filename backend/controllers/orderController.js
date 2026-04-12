@@ -9,19 +9,13 @@ function computeTotals(subtotal) {
   return { tax, shipping, totalPrice };
 }
 
+// POST /api/orders
 export const placeOrder = async (req, res, next) => {
   try {
-    const userId = req.user?._id || req.body.userId;
-    const userIdStr = userId?.toString?.() || userId;
+    // ✅ Always use authenticated user from token — never trust req.body.userId
+    const userId = req.user._id;
 
-    if (!userIdStr || typeof userIdStr !== "string") {
-      return res.status(400).json({ message: "userId is required" });
-    }
-    if (!mongoose.Types.ObjectId.isValid(userIdStr)) {
-      return res.status(400).json({ message: "Invalid userId" });
-    }
-
-    const cartItems = await Cart.find({ user: userIdStr }).populate("product");
+    const cartItems = await Cart.find({ user: userId }).populate("product");
 
     if (!cartItems || cartItems.length === 0) {
       return res.status(400).json({ message: "Cart is empty" });
@@ -37,14 +31,14 @@ export const placeOrder = async (req, res, next) => {
       }));
 
     if (items.length === 0) {
-      return res.status(400).json({ message: "Cart is empty" });
+      return res.status(400).json({ message: "No valid items in cart" });
     }
 
     const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const { tax, shipping, totalPrice } = computeTotals(subtotal);
 
     const order = await Order.create({
-      user: userIdStr,
+      user: userId,
       items,
       subtotal,
       tax,
@@ -53,32 +47,27 @@ export const placeOrder = async (req, res, next) => {
       status: "placed",
     });
 
-    // Clear cart after successful order placement
-    await Cart.deleteMany({ user: userIdStr });
+    // ✅ Clear cart after order
+    await Cart.deleteMany({ user: userId });
 
-    res.status(201).json(order);
+    res.status(201).json({ success: true, order });
   } catch (error) {
     next(error);
   }
 };
 
+// GET /api/orders/my  OR  GET /api/orders/:userId
 export const getUserOrders = async (req, res, next) => {
   try {
-    const userId = req.user?._id || req.params.userId;
-    const userIdStr = userId?.toString?.() || userId;
+    // ✅ Use token user first, fall back to param (for admin use)
+    const userId = req.params.userId
+      ? new mongoose.Types.ObjectId(req.params.userId)
+      : req.user._id;
 
-    if (!userIdStr || typeof userIdStr !== "string") {
-      return res.status(400).json({ message: "userId is required" });
-    }
-    if (!mongoose.Types.ObjectId.isValid(userIdStr)) {
-      return res.status(400).json({ message: "Invalid userId" });
-    }
+    const orders = await Order.find({ user: userId }).sort({ createdAt: -1 });
 
-    const orders = await Order.find({ user: userIdStr }).sort({ createdAt: -1 });
-
-    res.json(orders);
+    res.json({ success: true, orders });
   } catch (error) {
     next(error);
   }
 };
-

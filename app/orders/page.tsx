@@ -41,7 +41,7 @@ export default function OrdersPage() {
         }
 
         const res = await API.get(`/orders/${userId}`);
-        setOrders(res.data);
+        setOrders(res.data.orders || []);
       } catch (error) {
         toast.error("Failed to load orders");
         console.error(error);

@@ -22,6 +22,23 @@ const productSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  discount: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 100,
+  },
+  originalPrice: {
+    type: Number,
+  },
+  dealCategory: {
+    type: String,
+    enum: ['flash', 'clearance', 'weekly', null],
+    default: null,
+  },
+  dealEndTime: {
+    type: Date,
+  },
 }, { timestamps: true });
 
 export default mongoose.model("Product", productSchema);
