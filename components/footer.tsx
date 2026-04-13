@@ -45,13 +45,13 @@ export function Footer() {
             <ul className="space-y-3 text-sm">
               <li className="flex items-center space-x-2">
                 <Mail className="h-4 w-4 text-accent" />
-                <a href="mailto:support@primestore.com" className="text-muted-foreground hover:text-foreground transition">
-                  support@primestore.com
+                <a href="mailto:akhileshwuna22@gmail.com" className="text-muted-foreground hover:text-foreground transition">
+                  akhileshwuna22@gmail.com
                 </a>
               </li>
               <li className="flex items-center space-x-2">
                 <Phone className="h-4 w-4 text-accent" />
-                <span className="text-muted-foreground">+1 (555) 123-4567</span>
+                <span className="text-muted-foreground">+91 7842727605</span>
               </li>
               <li className="flex items-start space-x-2">
                 <MapPin className="h-4 w-4 text-accent mt-0.5" />

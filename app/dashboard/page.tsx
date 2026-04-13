@@ -53,10 +53,13 @@ export default function DashboardPage() {
       try {
         if (userId) {
           const res = await API.get(`/orders/${userId}`);
-          setOrders(res.data);
+          // Ensure we always set an array, even if API returns something else
+          const ordersData = Array.isArray(res.data) ? res.data : [];
+          setOrders(ordersData);
         }
       } catch (error) {
         console.error("Failed to fetch orders:", error);
+        setOrders([]); // Set empty array on error
       } finally {
         setIsLoading(false);
       }
@@ -64,7 +67,7 @@ export default function DashboardPage() {
     fetchOrders();
   }, [isAuthenticated, userId, router]);
 
-  const totalSpent = orders.reduce((sum, order) => sum + (order.totalPrice || 0), 0);
+  const totalSpent = Array.isArray(orders) ? orders.reduce((sum, order) => sum + (order.totalPrice || 0), 0) : 0;
   if (!isAuthenticated) return null;
 
   const navItems = [
@@ -142,7 +145,7 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                  <StatCard label="Total Orders" value={String(orders.length)} sub="Lifetime purchases" color="text-foreground" />
+                  <StatCard label="Total Orders" value={String((orders || []).length)} sub="Lifetime purchases" color="text-foreground" />
                   <StatCard label="Total Spent" value={`$${totalSpent.toFixed(2)}`} sub="Across all orders" color="text-foreground" />
                   <StatCard label="Reward Points" value={String(Math.floor(totalSpent))} sub="Redeem for discounts" color="text-accent" />
                 </div>
@@ -155,13 +158,13 @@ export default function DashboardPage() {
                       View all <ArrowUpRight className="w-4 h-4" />
                     </button>
                   </div>
-                  {isLoading ? <OrderSkeleton /> : orders.length === 0 ? (
+                  {isLoading ? <OrderSkeleton /> : (orders || []).length === 0 ? (
                     <div className="card-luxury p-10 text-center space-y-3">
                       <Package className="w-10 h-10 mx-auto text-muted-foreground" />
                       <p className="text-muted-foreground">No orders yet.</p>
                       <Link href="/products" className="btn-accent inline-flex px-6 py-2.5 text-sm">Browse Products</Link>
                     </div>
-                  ) : orders.slice(0, 3).map((order) => (
+                  ) : (orders || []).slice(0, 3).map((order) => (
                     <div key={order._id} className="card-luxury p-5 flex items-center justify-between gap-4">
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-xl bg-warm-gradient flex items-center justify-center text-2xl">📦</div>
@@ -194,14 +197,14 @@ export default function DashboardPage() {
                     Detailed view <ArrowUpRight className="w-4 h-4" />
                   </Link>
                 </div>
-                {isLoading ? <OrderSkeleton /> : orders.length === 0 ? (
+                {isLoading ? <OrderSkeleton /> : (orders || []).length === 0 ? (
                   <div className="card-luxury p-16 text-center space-y-4">
                     <ShoppingBag className="w-12 h-12 mx-auto text-muted-foreground" />
                     <h3 className="font-display text-xl font-bold text-foreground">No orders yet</h3>
                     <p className="text-muted-foreground">Start shopping to see your orders here.</p>
                     <Link href="/products" className="btn-primary inline-flex px-8 py-3">Start Shopping</Link>
                   </div>
-                ) : orders.map((order) => (
+                ) : (orders || []).map((order) => (
                   <div key={order._id} className="card-luxury p-6">
                     <div className="flex items-start justify-between gap-4 mb-4">
                       <div>

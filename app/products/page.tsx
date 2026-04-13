@@ -38,8 +38,8 @@ export default function ProductsPage() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await API.get("/products");
-        setProducts(res.data);
+        const res = await API.get("/products?page=1&limit=20&sort=rating&order=desc");
+        setProducts(res.data.products || []);
       } catch (error) {
         console.error(error);
         toast.error("Failed to load products");
@@ -186,11 +186,11 @@ export default function ProductsPage() {
                       id={product._id}
                       name={product.name}
                       price={product.price}
-                      originalPrice={product.price}
-                      rating={4.5}
-                      reviews={100}
+                      originalPrice={product.originalPrice}
+                      rating={product.rating}
+                      reviews={product.reviews}
                       category={product.category}
-                      image={product.image || ""}
+                      image={product.images?.[0] || ""}
                       inStock={product.countInStock > 0}
                       onAddToCart={() => addToCart(product._id)}
                       onBuyNow={() => buyNow(product._id)}

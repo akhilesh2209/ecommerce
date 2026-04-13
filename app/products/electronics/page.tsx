@@ -23,13 +23,17 @@ export default function ElectronicsPage() {
   useEffect(() => {
     const fetchElectronics = async () => {
       try {
-        const res = await API.get("/products");
-        const electronicsProducts = res.data.filter((product: any) => 
-          product.category?.toLowerCase() === 'electronics'
-        );
-        setProducts(electronicsProducts);
+        // First try without any category filter to see if API works
+        const res = await API.get("/products?limit=10");
+        console.log('General products response:', res.data);
+        
+        // Then try with category filter
+        const categoryRes = await API.get("/products?category=Computers&limit=10");
+        console.log('Category response:', categoryRes.data);
+        
+        setProducts(categoryRes.data.products || []);
       } catch (error) {
-        console.error(error);
+        console.error("API Error:", error);
         toast.error("Failed to load electronics products");
       } finally {
         setIsLoading(false);
@@ -144,11 +148,11 @@ export default function ElectronicsPage() {
                     id={product._id}
                     name={product.name}
                     price={product.price}
-                    originalPrice={product.price}
-                    rating={4.5}
-                    reviews={100}
+                    originalPrice={product.originalPrice}
+                    rating={product.rating}
+                    reviews={product.reviews}
                     category={product.category}
-                    image={product.image || ""}
+                    image={product.images?.[0] || ""}
                     inStock={product.countInStock > 0}
                     onAddToCart={() => addToCart(product._id)}
                     onBuyNow={() => buyNow(product._id)}

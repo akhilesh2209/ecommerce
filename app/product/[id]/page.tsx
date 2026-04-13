@@ -49,9 +49,8 @@ export default function ProductDetailPage() {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const res = await API.get(`/products`);
-        const found = res.data.find((p: any) => p._id === id);
-        setProduct(found);
+        const res = await API.get(`/products/${id}`);
+        setProduct(res.data);
       } catch (error) {
         console.error(error);
       } finally {

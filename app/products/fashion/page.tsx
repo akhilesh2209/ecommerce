@@ -23,13 +23,17 @@ export default function FashionPage() {
   useEffect(() => {
     const fetchFashion = async () => {
       try {
-        const res = await API.get("/products");
-        const fashionProducts = res.data.filter((product: any) => 
-          product.category?.toLowerCase() === 'fashion'
-        );
-        setProducts(fashionProducts);
+        // Test general API first
+        const res = await API.get("/products?limit=10");
+        console.log('General products response:', res.data);
+        
+        // Try with Clothing category
+        const categoryRes = await API.get("/products?category=Clothing&limit=10");
+        console.log('Clothing category response:', categoryRes.data);
+        
+        setProducts(categoryRes.data.products || []);
       } catch (error) {
-        console.error(error);
+        console.error("Fashion API Error:", error);
         toast.error("Failed to load fashion products");
       } finally {
         setIsLoading(false);
@@ -144,11 +148,11 @@ export default function FashionPage() {
                     id={product._id}
                     name={product.name}
                     price={product.price}
-                    originalPrice={product.price}
-                    rating={4.5}
-                    reviews={100}
+                    originalPrice={product.originalPrice}
+                    rating={product.rating}
+                    reviews={product.reviews}
                     category={product.category}
-                    image={product.image || ""}
+                    image={product.images?.[0] || ""}
                     inStock={product.countInStock > 0}
                     onAddToCart={() => addToCart(product._id)}
                     onBuyNow={() => buyNow(product._id)}
