@@ -71,16 +71,27 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
 
   const refreshWishlistCount = useCallback(async () => {
     const auth = getStoredAuth();
-    if (!auth.userId) {
+    if (!auth.userId || !auth.token) {
       setWishlistCount(0);
       return;
     }
 
     try {
       const res = await API.get(`/wishlist/${auth.userId}`);
-      setWishlistCount(res.data.length);
-    } catch (error) {
-      console.error("Failed to refresh wishlist count:", error);
+      setWishlistCount(Array.isArray(res.data) ? res.data.length : 0);
+    } catch (error: any) {
+      // Silently handle network errors and authentication issues
+      if (error?.response?.status === 401) {
+        // User is not authenticated, clear wishlist count
+        setWishlistCount(0);
+      } else if (error?.message?.includes('Network Error')) {
+        // Network connectivity issue - keep existing count
+        console.warn("Network error when refreshing wishlist count");
+      } else {
+        // Other errors - log but don't crash
+        console.error("Failed to refresh wishlist count:", error);
+        setWishlistCount(0);
+      }
     }
   }, []);
 

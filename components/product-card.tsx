@@ -171,9 +171,9 @@ export function ProductCard({ id, name, price, originalPrice, rating, reviews, c
 
           {/* Price */}
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-foreground">${price}</span>
-            {originalPrice > price && <span className="text-sm text-muted-foreground line-through">${originalPrice}</span>}
-            {discountPct > 0 && <span className="text-xs font-semibold text-[hsl(142_71%_45%)] bg-[hsl(142_71%_45%/0.1)] px-1.5 py-0.5 rounded-md">Save ${(originalPrice - price).toFixed(0)}</span>}
+            <span className="text-2xl font-bold text-foreground">₹{price.toLocaleString('en-IN')}</span>
+            {originalPrice > price && <span className="text-sm text-muted-foreground line-through">₹{originalPrice.toLocaleString('en-IN')}</span>}
+            {discountPct > 0 && <span className="text-xs font-semibold text-[hsl(142_71%_45%)] bg-[hsl(142_71%_45%/0.1)] px-1.5 py-0.5 rounded-md">Save ₹{(originalPrice - price).toLocaleString('en-IN')}</span>}
           </div>
         </div>
 

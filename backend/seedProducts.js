@@ -10,8 +10,8 @@ const productData = {
     {
       name: "Apple iPhone 15 Pro Max 256GB",
       description: "The iPhone 15 Pro Max features a stunning titanium design, A17 Pro chip with GPU, and advanced camera systems. Capture incredible detail with 48MP Main camera. Experience iPhone in a whole new way with Dynamic Island and Always-On display.",
-      price: 1199.99,
-      originalPrice: 1299.99,
+      price: 1199.99 * 83,
+      originalPrice: 1299.99 * 83,
       category: "Cell Phones",
       subcategory: "Smartphones",
       brand: "Apple",
@@ -43,8 +43,8 @@ const productData = {
     {
       name: "Samsung Galaxy S24 Ultra 5G 512GB",
       description: "The Galaxy S24 Ultra features a 6.8-inch Dynamic AMOLED display, Snapdragon 8 Gen 3 processor, and S Pen. Capture stunning photos with 200MP main camera and enjoy all-day battery life.",
-      price: 1299.99,
-      originalPrice: 1399.99,
+      price: 1299.99 * 83,
+      originalPrice: 1399.99 * 83,
       category: "Cell Phones",
       subcategory: "Smartphones",
       brand: "Samsung",
@@ -72,8 +72,8 @@ const productData = {
     {
       name: "MacBook Pro 14-inch M3 Pro 18GB RAM 512GB SSD",
       description: "The MacBook Pro with M3 Pro chip delivers exceptional performance for demanding workflows. Features a stunning Liquid Retina XDR display, all-day battery life, and advanced camera and audio systems.",
-      price: 1999.99,
-      originalPrice: 2199.99,
+      price: 1999.99 * 83,
+      originalPrice: 2199.99 * 83,
       category: "Computers",
       subcategory: "Laptops",
       brand: "Apple",
@@ -99,8 +99,8 @@ const productData = {
     {
       name: "Dell XPS 15 Laptop Intel Core i7 16GB RAM 1TB SSD",
       description: "The Dell XPS 15 combines stunning design with powerful performance. Features a 15.6-inch 4K OLED display, Intel Core i7 processor, and NVIDIA graphics for creative professionals.",
-      price: 1799.99,
-      originalPrice: 1999.99,
+      price: 1799.99 * 83,
+      originalPrice: 1999.99 * 83,
       category: "Computers",
       subcategory: "Laptops",
       brand: "Dell",
@@ -129,8 +129,8 @@ const productData = {
     {
       name: "Instant Pot Duo 7-in-1 Electric Pressure Cooker 6Qt",
       description: "The Instant Pot Duo 7-in-1 combines 7 kitchen appliances in 1: pressure cooker, slow cooker, rice cooker, steamer, sauté, yogurt maker, and warmer. Cook fast or slow, meal planning made easy.",
-      price: 79.99,
-      originalPrice: 99.99,
+      price: 79.99 * 83,
+      originalPrice: 99.99 * 83,
       category: "Home & Kitchen",
       subcategory: "Small Appliances",
       brand: "Instant Pot",
@@ -154,8 +154,8 @@ const productData = {
     {
       name: "Ninja Professional Blender 1000W",
       description: "The Ninja Professional Blender features 1000 watts of professional power. Total Crushing Technology delivers unbeatable smoothness. Perfect for frozen drinks, smoothies, and food processing.",
-      price: 89.99,
-      originalPrice: 119.99,
+      price: 89.99 * 83,
+      originalPrice: 119.99 * 83,
       category: "Home & Kitchen",
       subcategory: "Small Appliances",
       brand: "Ninja",
@@ -183,8 +183,8 @@ const productData = {
     {
       name: "Nike Air Max 270 Men's Shoes",
       description: "The Nike Air Max 270 delivers visible comfort with its large Max Air unit. The shoe features a no-sew upper for comfort and durability, with foam midsole for lightweight cushioning.",
-      price: 120.00,
-      originalPrice: 150.00,
+      price: 120.00 * 83,
+      originalPrice: 150.00 * 83,
       category: "Clothing",
       subcategory: "Footwear",
       brand: "Nike",
@@ -202,10 +202,10 @@ const productData = {
       countInStock: 150,
       tags: ["shoes", "nike", "air max", "running", "athletic"],
       variants: [
-        { name: "Size", value: "8", price: 120.00, countInStock: 25 },
-        { name: "Size", value: "9", price: 120.00, countInStock: 30 },
-        { name: "Size", value: "10", price: 120.00, countInStock: 25 },
-        { name: "Size", value: "11", price: 120.00, countInStock: 20 }
+        { name: "Size", value: "8", price: 120.00 * 83, countInStock: 25 },
+        { name: "Size", value: "9", price: 120.00 * 83, countInStock: 30 },
+        { name: "Size", value: "10", price: 120.00 * 83, countInStock: 25 },
+        { name: "Size", value: "11", price: 120.00 * 83, countInStock: 20 }
       ],
       sku: "NAM270",
       bestseller: true,
@@ -214,8 +214,8 @@ const productData = {
     {
       name: "Levi's 501 Original Fit Men's Jeans",
       description: "The original blue jean since 1873. The Levi's 501 features a straight fit with signature button fly, and iconic leather patch. Made with sustainable materials.",
-      price: 69.50,
-      originalPrice: 89.50,
+      price: 69.50 * 83,
+      originalPrice: 89.50 * 83,
       category: "Clothing",
       subcategory: "Jeans",
       brand: "Levi's",
@@ -233,10 +233,10 @@ const productData = {
       countInStock: 200,
       tags: ["jeans", "levi's", "denim", "classic", "men"],
       variants: [
-        { name: "Size", value: "30x32", price: 69.50, countInStock: 40 },
-        { name: "Size", value: "32x32", price: 69.50, countInStock: 50 },
-        { name: "Size", value: "34x32", price: 69.50, countInStock: 45 },
-        { name: "Size", value: "36x32", price: 69.50, countInStock: 35 }
+        { name: "Size", value: "30x32", price: 69.50 * 83, countInStock: 40 },
+        { name: "Size", value: "32x32", price: 69.50 * 83, countInStock: 50 },
+        { name: "Size", value: "34x32", price: 69.50 * 83, countInStock: 45 },
+        { name: "Size", value: "36x32", price: 69.50 * 83, countInStock: 35 }
       ],
       sku: "LV501",
       discount: 22,
@@ -248,8 +248,8 @@ const productData = {
     {
       name: "Dyson Airwrap Complete Long Styler",
       description: "The Dyson Airwrap styles hair from damp to dry using Coanda effect. Complete with 1.2-inch and 1.6-inch barrels, firm and soft smoothing brushes, and round volumizing brush.",
-      price: 599.99,
-      originalPrice: 649.99,
+      price: 599.99 * 83,
+      originalPrice: 649.99 * 83,
       category: "Beauty",
       subcategory: "Hair Styling",
       brand: "Dyson",
@@ -303,7 +303,7 @@ const generateMoreProducts = () => {
     for (let i = 0; i < 50; i++) {
       const brand = categoryBrands[Math.floor(Math.random() * categoryBrands.length)];
       const name = names[Math.floor(Math.random() * names.length)];
-      const price = Math.floor(Math.random() * 900) + 50;
+      const price = (Math.floor(Math.random() * 900) + 50) * 83;
       const originalPrice = price * (1 + Math.random() * 0.5);
 
       additionalProducts.push({

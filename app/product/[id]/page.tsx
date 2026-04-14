@@ -185,9 +185,9 @@ export default function ProductDetailPage() {
             {/* Price */}
             <div className="space-y-1">
               <div className="flex items-baseline gap-3">
-                <span className="font-display text-4xl font-bold text-foreground">${product?.price}</span>
+                <span className="font-display text-4xl font-bold text-foreground">₹{product?.price?.toLocaleString('en-IN')}</span>
                 {product?.originalPrice && product.originalPrice !== product.price && (
-                  <span className="text-xl text-muted-foreground line-through">${product?.originalPrice}</span>
+                  <span className="text-xl text-muted-foreground line-through">₹{product?.originalPrice?.toLocaleString('en-IN')}</span>
                 )}
               </div>
               <p className="text-sm text-green-500 font-medium flex items-center gap-1.5">

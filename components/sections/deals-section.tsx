@@ -137,13 +137,13 @@ export function DealsSection() {
                   <h3 className="text-sm font-semibold text-foreground line-clamp-2 leading-snug group-hover:text-white transition-colors">{deal.name}</h3>
 
                   <div className="flex items-baseline gap-2">
-                    <span className="text-xl font-bold text-foreground">${deal.price}</span>
-                    <span className="text-sm text-muted-foreground line-through">${deal.originalPrice}</span>
+                    <span className="text-xl font-bold text-foreground">₹{deal.price?.toLocaleString('en-IN')}</span>
+                    <span className="text-sm text-muted-foreground line-through">₹{deal.originalPrice?.toLocaleString('en-IN')}</span>
                   </div>
 
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-[hsl(142_71%_45%)] font-semibold bg-[hsl(142_71%_45%/0.1)] px-2 py-0.5 rounded-lg">
-                      Save ${deal.originalPrice - deal.price}
+                      Save ₹{(deal.originalPrice - deal.price).toLocaleString('en-IN')}
                     </span>
                     <span className="flex items-center gap-1 text-xs text-[hsl(0_84%_65%)] font-medium">
                       <Tag className="h-3 w-3" /> Hot deal
